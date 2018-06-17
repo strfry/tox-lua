@@ -18,15 +18,27 @@ load_header "headers/tox.h"
 
 local lib = ffi.load("toxcore")
 
+function make_options(overrides)
+        if not overrides then return nil end
+        options = lib.tox_options_new(nil)
+        for k,v in pairs(overrides) do
+                options[k] = v
+        end
+        ffi.gc(options, lib.tox_options_free)
+        return options
+end
+
+make_options(nil)
+make_options({})
+
 -- Create a simple wrapper class for struct Tox
 toxmt = {}
-toxmt.__new = function(options) 
-        return lib.tox_new(nil, nil)
+toxmt.__new = function(_, options)
+        return lib.tox_new(make_options(options), nil)
+        -- TODO: Check error return and throw exception
 end
 toxmt.__index = function(self, name)
         return lib["tox_" .. name]
 end
 
-local Tox = ffi.metatype("struct Tox", toxmt)
-
-return Tox
+return ffi.metatype("struct Tox", toxmt)
