@@ -14,33 +14,18 @@ local function load_header(hdr)
         ffi.cdef(content)
 end
 
-load_header "headers/tox.h"
+load_header "headers/toxav.h"
 
 local lib = ffi.load("toxcore")
 
-function make_options(overrides)
-        if not overrides then return nil end
-
-        local options = lib.tox_options_new(nil)
-        
-        for k,v in pairs(overrides) do
-                options[k] = v
-        end
-
-        return options
-end
-
-make_options(nil)
-make_options({})
-
 -- Create a simple wrapper class for struct Tox
-local toxmt = {}
-toxmt.__new = function(_, options)
-        return lib.tox_new(make_options(options), nil)
+local toxavmt = {}
+toxavmt.__new = function(_, tox)
+        return lib.toxav_new(tox, nil)
         -- TODO: Check error return and throw exception
 end
-toxmt.__index = function(self, name)
-        return lib["tox_" .. name]
+toxavmt.__index = function(self, name)
+        return lib["toxav_" .. name]
 end
 
-return ffi.metatype("struct Tox", toxmt)
+return ffi.metatype("struct ToxAV", toxavmt)
