@@ -14,7 +14,7 @@ local function load_header(hdr)
         ffi.cdef(content)
 end
 
-load_header "lib/quirc.h"
+load_header "barcode/quirc.h"
 
 local lib = ffi.load("quirc")
 
