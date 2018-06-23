@@ -1,5 +1,5 @@
 ffi = require "ffi"
-cairo = require "cairo"
+cairo = require "gui.cairo"
 v4l2 = require "camera.v4l2"
 video = require "video.init"
 
