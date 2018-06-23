@@ -1,10 +1,10 @@
-local toxcore = require "toxcore"
-local toxav = require "toxav"
+local toxcore = require "tox.core"
+local toxav = require "tox.av"
 --local sodium = require "ffi".load("sodium")
 
 local ffi = require "ffi"
 
---local video = require "video"
+local video = require "video.init"
 
 jit.off() -- TODO: Find out which functions to disable specifically
 
@@ -106,20 +106,34 @@ end, nil)
 
 local send_video_frames = false
 
+
+aliceav:callback_call_state(function(toxav, friend_number, state, _)
+    print ("alices callstate now is", state)
+    send_video_frames = true
+end, nil)
+
 bobav:callback_call_state(function(toxav, friend_number, state, _)
     print ("bobs callstate now is", state)
     send_video_frames = true
-end, nil)--"Alice->Bob")
+end, nil)
 
 
 aliceav:callback_video_receive_frame(function (av, friend_number, width, height, y, u, v, ystride, ustride, vstride, _)
-    print "Alice received Frame"
+    print "Alice received video frame"
+end, nil)
+
+aliceav:callback_audio_receive_frame(function ()
+    print "Alice received audio frame"
 end, nil)
 
 bobav:callback_video_receive_frame(function (av, friend_number, width, height, y, u, v, ystride, ustride, vstride, _)
-    print ("Bob received frame", width, height)
+    print ("Bob received video frame", width, height)
+    video.update_texture(win, y, u, v)
 end, nil)
 
+aliceav:callback_audio_receive_frame(function ()
+    print "Bob received audio frame"
+end, nil)
 
 if TEST_TRANSFER_V then
     print "Trying video enc/dec..."
@@ -130,16 +144,34 @@ if TEST_TRANSFER_V then
     end
 end
 
+local width = 640
+local height = 480
+
+local y = ffi.new("uint8_t[?]", width * height + 32)
+local u = ffi.new("uint8_t[?]", width * height / 4 + 32)
+local v = ffi.new("uint8_t[?]", width * height / 4 + 32)
+
+win = video.create_window(width, height)
+frame = 0
+
 while true do
     iterate_tox()
+    aliceav:iterate()
+    bobav:iterate()
 
     if send_video_frames then
+        video.generate_test_pattern(width, height, y, u, v, frame)
+        frame = frame + 1
+        
         local rc = ffi.new("TOXAV_ERR_SEND_FRAME[1]")
-        local result = bobav:video_send_frame(alice_on_bobs_friendlist,
-            32, 32, nil, nil, nil, rc)
+        local result = aliceav:video_send_frame(0,
+            width, height, y, u, v, rc)
 
         if not result then
-            --print ("send video frame failed", rc[0])
+            print ("send video frame failed", rc[0])
+            exit()
         end
     end
+
+    video.update_window(win)
 end

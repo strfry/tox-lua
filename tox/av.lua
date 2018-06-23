@@ -14,7 +14,7 @@ local function load_header(hdr)
         ffi.cdef(content)
 end
 
-load_header "headers/toxav.h"
+load_header "tox/headers/toxav.h"
 
 local lib = ffi.load("toxcore")
 
